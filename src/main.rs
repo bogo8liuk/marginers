@@ -4,6 +4,8 @@ use std::io::{self};
 use std::path::Path;
 use std::process::exit;
 
+use unicode_segmentation::UnicodeSegmentation;
+
 const MARGIN_CHARS_NUM: usize = 80;
 
 fn main() -> io::Result<()> {
@@ -37,7 +39,7 @@ fn reduce_margins_of_lines(mut lines: Vec<&str>) -> Vec<String> {
     lines.iter_mut().for_each(|line| {
         current_line.push_str(line);
 
-        while current_line.len() > MARGIN_CHARS_NUM {
+        while count_graphemes(current_line.as_str()) > MARGIN_CHARS_NUM {
             match split_at_max(current_line.as_str(), MARGIN_CHARS_NUM) {
                 None => {
                     eprintln!(
@@ -73,15 +75,15 @@ fn split_at_max(s: &str, max: usize) -> Option<(&str, &str)> {
     let mut last_whitespace_index = 0;
     let mut any_trailing_whitespace = false;
     let mut last_trailing_whitespace_index = 0;
-    let mut iter = s.chars();
+    let mut graphemes = UnicodeSegmentation::graphemes(s, true);
     loop {
-        let c = iter.next();
+        let c = graphemes.next();
 
         if c == None || i > max {
             break;
         }
 
-        if c?.is_whitespace() {
+        if is_grapheme_whitespace(c?) {
             if !any_trailing_whitespace {
                 last_whitespace_index = i;
             }
@@ -99,4 +101,12 @@ fn split_at_max(s: &str, max: usize) -> Option<(&str, &str)> {
 
     s.split_at_checked(last_whitespace_index)
         .map(|(line1, line2)| (line1, line2.trim_start()))
+}
+
+fn count_graphemes(s: &str) -> usize {
+    UnicodeSegmentation::graphemes(s, true).count()
+}
+
+fn is_grapheme_whitespace(g: &str) -> bool {
+    g.chars().all(|c| c.is_whitespace())
 }
