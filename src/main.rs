@@ -4,6 +4,8 @@ use std::io::{self};
 use std::path::Path;
 use std::process::exit;
 
+const MARGIN_CHARS_NUM: usize = 80;
+
 fn main() -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
 
@@ -35,8 +37,8 @@ fn reduce_margins_of_lines(mut lines: Vec<&str>) -> Vec<String> {
     lines.iter_mut().for_each(|line| {
         current_line.push_str(line);
 
-        while current_line.len() > 80 {
-            match split_at_max(current_line.as_str(), 80) {
+        while current_line.len() > MARGIN_CHARS_NUM {
+            match split_at_max(current_line.as_str(), MARGIN_CHARS_NUM) {
                 None => {
                     eprintln!(
                         "Unreachable code, cannot split line -> {}",
@@ -73,13 +75,13 @@ fn split_at_max(s: &str, max: usize) -> Option<(&str, &str)> {
     let mut last_trailing_whitespace_index = 0;
     let mut iter = s.chars();
     loop {
-        let c = iter.next()?;
+        let c = iter.next();
 
-        if i > max {
+        if c == None || i > max {
             break;
         }
 
-        if c.is_whitespace() {
+        if c?.is_whitespace() {
             if !any_trailing_whitespace {
                 last_whitespace_index = i;
             }
